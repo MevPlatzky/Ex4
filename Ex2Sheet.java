@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-
 /**
  * The documentation of this class was removed as of Ex4...
  */
@@ -82,9 +81,9 @@ public class Ex2Sheet implements Sheet {
         for (int x = 0; x < width(); x = x + 1) {
             for (int y = 0; y < height(); y = y + 1) {
                 Cell c = table[x][y];
-              if (dd[x][y] != -1 && c!=null && (c.getType()!= Ex2Utils.TEXT)) {
-                String res = eval(x, y);
-                    Double d = getDouble(res);
+              if (dd[x][y] != -1 && c!=null && (c.getType()!= Ex2Utils.TEXT)) { //first validation check
+                String res = eval(x, y);        // "a3+5" ----> "13+5"
+                    Double d = getDouble(res);  // "13+5" ----> 18
                     if(d==null) {
                         c.setType(Ex2Utils.ERR_FORM_FORMAT);
                     }
@@ -292,21 +291,21 @@ public class Ex2Sheet implements Sheet {
     private boolean isFormP(String form) {
         boolean ans = false;
         while(canRemoveB(form)) {
-            form = removeB(form);
+            form = removeB(form);   //כל עוד אפשר להיפטר מהסוגריים החיצוניים - ניפטר מהם.
         }
         Index2D c = new CellEntry(form);
-        if(isIn(c.getX(), c.getY())) {ans = true;}
+        if(isIn(c.getX(), c.getY())) {ans = true;} //אם הצורה מתאימה להיות תא ולידי
         else{
-            if(isNumber(form)){ans = true;}
+            if(isNumber(form)){ans = true;}  // אם זה מספר רגיל
             else {
                 int ind = findLastOp(form);// bug
                 if(ind==0) {  // the case of -1, or -(1+1)
                     char c1 = form.charAt(0);
                     if(c1=='-' | c1=='+') {
-                        ans = isFormP(form.substring(1));}
+                        ans = isFormP(form.substring(1));} //אם האופרטור בהתחלה- לבדוק החל מהתו שאחריו
                     else {ans = false;}
                 }
-                else {
+                else { //אם האופרטור מחלק את הביטוי לשניים ובודק את התקינות של שני החלקים
                     String f1 = form.substring(0, ind);
                     String f2 = form.substring(ind + 1);
                     ans = isFormP(f1) && isFormP(f2);
@@ -403,7 +402,7 @@ public class Ex2Sheet implements Sheet {
         }
         return ans;
     }
-    public static int findLastOp(String form) {
+    public static int findLastOp(String form) { //בודק מה האופרטור הראשון שצריך לחשב (וולידציה שלו)
         int ans = -1;
         double s1=0,min=-1;
         for(int i=0;i<form.length();i++) {
