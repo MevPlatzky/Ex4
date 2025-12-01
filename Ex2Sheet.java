@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+
 /**
  * The documentation of this class was removed as of Ex4...
  */
