@@ -69,7 +69,7 @@ public class Ex2Sheet implements Sheet {
     public void set(int x, int y, String s) {
         Cell c = new SCell(s);
         table[x][y] = c;
-      //  eval();
+        eval(); //after you change a cell you need to update the whole thing
     }
 
     ///////////////////////////////////////////////////////////
@@ -207,6 +207,7 @@ public class Ex2Sheet implements Sheet {
             data[x][y] = getDouble(c.toString());
             return line;
         }
+        // put the value of the formula inside data, and if it is not computable- put null in data and set the right type.
         if (type == Ex2Utils.FORM | type == Ex2Utils.ERR_CYCLE_FORM || type== Ex2Utils.ERR_FORM_FORMAT) {
             line = line.substring(1); // removing the first "="
             if (isForm(line)) {
@@ -251,7 +252,7 @@ public class Ex2Sheet implements Sheet {
         }
         return ans;
     }
-
+    /** need to add the FUNC types...................................... **/
     public int checkType(String line) {
         line = removeSpaces(line);
         int ans = Ex2Utils.TEXT;
@@ -263,6 +264,7 @@ public class Ex2Sheet implements Sheet {
                 int type = -1;
                 String s = line.substring(1);
                 if(isForm(s)) {ans = Ex2Utils.FORM;}
+                                                          /** Overhere!!! ---> else if...  **/
             }
         }
         return ans;
@@ -293,12 +295,14 @@ public class Ex2Sheet implements Sheet {
         while(canRemoveB(form)) {
             form = removeB(form);   //כל עוד אפשר להיפטר מהסוגריים החיצוניים - ניפטר מהם.
         }
+        //if(isFunc(form)) ans = true;
+        // else {
         Index2D c = new CellEntry(form);
         if(isIn(c.getX(), c.getY())) {ans = true;} //אם הצורה מתאימה להיות תא ולידי
         else{
-            if(isNumber(form)){ans = true;}  // אם זה מספר רגיל
+            if(isNumber(form)) {ans = true;}  // אם זה מספר רגיל
             else {
-                int ind = findLastOp(form);// bug
+                int ind = findLastOp(form);// bug (what?)
                 if(ind==0) {  // the case of -1, or -(1+1)
                     char c1 = form.charAt(0);
                     if(c1=='-' | c1=='+') {
@@ -312,8 +316,39 @@ public class Ex2Sheet implements Sheet {
                 }
             }
         }
+        // }
+
+        // sum(a1:e3)
         return ans;
     }
+    private boolean isFunc (String form){
+        boolean ans = false;
+        form = removeSpaces(form); //"sum (a1 : b7)" ---> "sum(a1:b13)"
+        form = form.toUpperCase(); //                ---> "SUM(A1:B13)"
+        if (form.startsWith("MIN")||form.startsWith("MAX")||form.startsWith("SUM")||form.startsWith("AVG")){
+            form = form.substring(3);  //     ---> "(A1:B13)"
+            if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
+            String[] splitRange =form.split(":");
+            if(splitRange.length!=2) return false;  // must have at lest two chars per index A2 I e.g.
+            else {
+                Index2D c1 = new CellEntry(splitRange[0]);
+                Index2D c2 = new CellEntry(splitRange[1]);
+                // try to put those parts as valid cells- to see if they're valid
+                if (c1.isValid() && c2.isValid() && isIn(c1.getX(), c1.getY()) && isIn(c2.getX(), c2.getY()))
+                    return true;
+            }
+        }
+        else if (form.startsWith("IF")){ // IF
+            form = form.substring(2);
+            if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
+            String[] splitIf =form.split(",");
+            if(splitIf.length!=3) return false;  // must have at lest two chars per index A2 I e.g.
+            else return (isFunc(splitIf[0]) && isFunc(splitIf[1]) && isFunc(splitIf[2])); //check if IF arguments are valid forms/functions
+            }
+        return ans;
+    }
+
+
     public static ArrayList<Index2D> allCells(String line) {
         ArrayList<Index2D> ans = new ArrayList<Index2D>();
         int i=0;
@@ -415,6 +450,10 @@ public class Ex2Sheet implements Sheet {
                 if(op>1) {d+=0.5;}
                 if(min==-1 || d<=min) {min = d;ans=i;}
             }
+            // min 1, ans=2
+            // (3+2*4)
+            // -1, -1, 0, -1 ...
+            // M_OPS = {"+", "-", "*", "/"}
         }
         return ans;
     }

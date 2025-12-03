@@ -13,7 +13,7 @@ public class Range2D {
         _second = new CellEntry(b.getX(), b.getY());
 
     }
-
+    //returns an array of the relevant indexes
     public ArrayList<Index2D> getCells (){
         ArrayList<Index2D> Cells = new ArrayList<>();
 
@@ -23,12 +23,7 @@ public class Range2D {
         int minY = Math.min(_second.getY(), _first.getY());
         int maxY = Math.max(_second.getY(), _first.getY());
 
-
-
-        // a1:c5 minX = 0 minY = 0, maxX = 2, maxY = 4;
-        //
-
-        for (int i = minX ; i <= maxX; i++) {// gets all the relevant cells into the list
+        for (int i = minX ; i <= maxX; i++) {       // gets all the relevant cells into the list
             for(int j = minY ; j<= maxY ; j++){
                 Index2D tempCell = new CellEntry(i,j);
                 Cells.add(tempCell);
