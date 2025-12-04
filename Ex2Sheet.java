@@ -36,10 +36,15 @@ public class Ex2Sheet implements Sheet {
             c.setOrder(-1);
         } // BUG 345
       //  if(t==Ex2Utils.ERR_CYCLE_FORM) {ans = "ERR_CYCLE!";}
-        if(t== Ex2Utils.NUMBER || t== Ex2Utils.FORM) {
+        if(t== Ex2Utils.NUMBER || t== Ex2Utils.FORM || t== Ex2Utils.FUNC || t== Ex2Utils.IF) {
             ans = ""+data[x][y];
         }
-        if(t== Ex2Utils.ERR_FORM_FORMAT) {ans = Ex2Utils.ERR_FORM;}
+        ans = switch (t) {
+            case Ex2Utils.ERR_FORM_FORMAT -> Ex2Utils.ERR_FORM;
+            case Ex2Utils.ERR_FUNC_FORMAT -> Ex2Utils.ERR_FUNC;
+            case Ex2Utils.ERR_IF_FORMAT -> Ex2Utils.ERR_IF;
+            default -> ans;
+        };
         return ans;
     }
 
@@ -61,10 +66,12 @@ public class Ex2Sheet implements Sheet {
     public int width() {
         return table.length;
     }
+
     @Override
     public int height() {
         return table[0].length;
     }
+
     @Override
     public void set(int x, int y, String s) {
         Cell c = new SCell(s);
@@ -81,19 +88,25 @@ public class Ex2Sheet implements Sheet {
         for (int x = 0; x < width(); x = x + 1) {
             for (int y = 0; y < height(); y = y + 1) {
                 Cell c = table[x][y];
-              if (dd[x][y] != -1 && c!=null && (c.getType()!= Ex2Utils.TEXT)) { //first validation check
+              if (dd[x][y] != -1 && c!=null && (c.getType()!= Ex2Utils.TEXT)) { //first validation check - depends/null/text
                 String res = eval(x, y);        // "a3+5" ----> "13+5"
                     Double d = getDouble(res);  // "13+5" ----> 18
                     if(d==null) {
-                        c.setType(Ex2Utils.ERR_FORM_FORMAT);
+                        switch (c.getType()) {
+                            case Ex2Utils.FORM:
+                                c.setType(Ex2Utils.ERR_FORM_FORMAT);
+                                break;
+                            case Ex2Utils.FUNC:
+                                c.setType(Ex2Utils.ERR_FUNC_FORMAT);
+                                break;
+                            case Ex2Utils.IF:
+                                c.setType(Ex2Utils.ERR_IF_FORMAT);
+                                break;
+                        }
                     }
-                    else {
-                        data[x][y] = d;
-                    }
+                    else {data[x][y] = d;}
                 }
-                if (dd[x][y] == -1 ) {
-                    c.setType(Ex2Utils.ERR_CYCLE_FORM);
-                }
+                if (dd[x][y] == -1 ) {c.setType(Ex2Utils.ERR_CYCLE_FORM);}
             }
         }
     }
@@ -198,25 +211,29 @@ public class Ex2Sheet implements Sheet {
     public String eval(int x, int y) {
         Cell c = table[x][y];
         String line = c.getData();
-        if(c==null || c.getType()== Ex2Utils.TEXT ) {
+        line = removeSpaces(line.toUpperCase());
+        if(c==null || c.getType()== Ex2Utils.TEXT ) { //if it is a text - leave as is.
             data[x][y] = null;
             return line;
         }
         int type = c.getType();
-        if(type== Ex2Utils.NUMBER) {
+        if(type== Ex2Utils.NUMBER) { //same as text - leave as is
             data[x][y] = getDouble(c.toString());
             return line;
         }
-        // put the value of the formula inside data, and if it is not computable- put null in data and set the right type.
-        if (type == Ex2Utils.FORM | type == Ex2Utils.ERR_CYCLE_FORM || type== Ex2Utils.ERR_FORM_FORMAT) {
+        // put the value of the formula inside data, and if it is not computable - put null in data and set the right type.
+        if (type == Ex2Utils.FORM | type == Ex2Utils.ERR_CYCLE_FORM || type== Ex2Utils.ERR_FORM_FORMAT
+                || type == Ex2Utils.FUNC || type == Ex2Utils.ERR_FUNC_FORMAT || type == Ex2Utils.ERR_IF_FORMAT || type == Ex2Utils.IF) {
             line = line.substring(1); // removing the first "="
             if (isForm(line)) {
                 Double dd = computeForm(x,y);
                 data[x][y] = dd;
                 if(dd==null) {
-                    c.setType(Ex2Utils.ERR_FORM_FORMAT);
+                    if (line.startsWith("IF")) c.setType(Ex2Utils.ERR_IF_FORMAT);
+                    else if (line.startsWith("SUM") || line.startsWith("MIN") || line.startsWith("MAX") || line.startsWith("AVG")) c.setType(Ex2Utils.ERR_FUNC_FORMAT);
+                    else c.setType(Ex2Utils.ERR_FORM_FORMAT);
                 }
-                else {c.setType(Ex2Utils.FORM);}
+                else {c.setType(Ex2Utils.FORM);} //צריך להוסיף IF ו- FUNC
         }
         else {data[x][y] = null;}
         }
@@ -320,9 +337,8 @@ public class Ex2Sheet implements Sheet {
 
     private boolean isFunc (String form){
         boolean ans = false;
-        form = form.toUpperCase(); // "sum(a1:b13)"     ---> "SUM(A1:B13)"
         if (form.startsWith("MIN")||form.startsWith("MAX")||form.startsWith("SUM")||form.startsWith("AVG")){
-            form = form.substring(3);  //     ---> "(A1:B13)"
+            form = form.substring(3);  //    "SUM(A1:B13)" ---> "(A1:B13)"
             if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
             String[] splitRange =form.split(":");
             if(splitRange.length!=2) return false;  // must have at lest two chars per index A2 I e.g.
