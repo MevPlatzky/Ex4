@@ -291,7 +291,6 @@ public class Ex2Sheet implements Sheet {
         return ans;
     }
     private boolean isFormP(String form) {
-
         while(canRemoveB(form)) {
             form = removeB(form);   //כל עוד אפשר להיפטר מהסוגריים החיצוניים - ניפטר מהם.
         }

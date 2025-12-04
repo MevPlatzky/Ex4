@@ -7,8 +7,8 @@ package assignments.ex2.ex2_sol;
  *
  */
 public class Ex2Utils {
-    public static final int TEXT=1, NUMBER=2, FORM=3, ERR_FORM_FORMAT=-2, ERR_CYCLE_FORM=-1, ERR=-1;
-    public static final String ERR_CYCLE = "ERR_CYCLE!", ERR_FORM = "ERR_FORM!";
+    public static final int TEXT=1, NUMBER=2, FORM=3, FUNC=4, IF=5, ERR_FORM_FORMAT=-2, ERR_CYCLE_FORM=-1, ERR=-1;
+    public static final String ERR_CYCLE = "ERR_CYCLE!", ERR_FORM = "ERR_FORM!" , IF_ERR = "IF_ERR!" , FUNC_ERR = "FUNC_ERR!";
     public static final int WIDTH = 9, HEIGHT=17, MAX_CHARS=8, WINDOW_WIDTH=1200, WINDOW_HEIGHT=600;
     public static final int WAIT_TIME_MS = 10, MAX_X=20;
     public static final double EPS1 = 0.001, EPS2=EPS1*EPS1, EPS=EPS2, PEN_RADIUS = 0.001;
@@ -21,6 +21,3 @@ public class Ex2Utils {
      public static final String[] FUNCTIONS = {"if", "sum", "avg", "min", "max"};
      public static String[] B_OPS = {"==","!=", "<=", ">=", "<", ">"};
 }
-/**                                  condotion = "a1 <= 4"
- *
- */
