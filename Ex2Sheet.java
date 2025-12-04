@@ -233,13 +233,17 @@ public class Ex2Sheet implements Sheet {
                     else if (line.startsWith("SUM") || line.startsWith("MIN") || line.startsWith("MAX") || line.startsWith("AVG")) c.setType(Ex2Utils.ERR_FUNC_FORMAT);
                     else c.setType(Ex2Utils.ERR_FORM_FORMAT);
                 }
-                else {c.setType(Ex2Utils.FORM);} //צריך להוסיף IF ו- FUNC
-        }
+                else {
+                    if (line.startsWith("IF")) c.setType(Ex2Utils.IF);
+                    else if (line.startsWith("SUM") || line.startsWith("MIN") || line.startsWith("MAX") || line.startsWith("AVG"))
+                        c.setType(Ex2Utils.FUNC);
+                    else c.setType(Ex2Utils.FORM);
+                }
+            }
         else {data[x][y] = null;}
         }
-        String ans = null;
-        if(data[x][y]!=null) {ans = data[x][y].toString();}
-        return ans;
+        if(data[x][y]!=null) return data[x][y].toString();
+        else return null;
     }
     /////////////////////////////////////////////////
     public static Integer getInteger(String line) {
@@ -289,7 +293,6 @@ public class Ex2Sheet implements Sheet {
     public boolean isForm(String form) {
         boolean ans = false;
         if(form!=null) {
-            form = removeSpaces(form);
             try {
                 ans = isFormP(form);
             }
@@ -297,12 +300,11 @@ public class Ex2Sheet implements Sheet {
         }
         return ans;
     }
+
     private Double computeForm(int x, int y) {
         Double ans = null;
         String form = table[x][y].getData();
-        form = form.substring(1);// remove the "="
         if(isForm(form)) {
-            form = removeSpaces(form);
             ans = computeFormP(form);
         }
         return ans;
