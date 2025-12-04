@@ -304,64 +304,66 @@ public class Ex2Sheet implements Sheet {
     private Double computeForm(int x, int y) {
         Double ans = null;
         String form = table[x][y].getData();
+        form = form.substring(1);
         if(isForm(form)) {
             ans = computeFormP(form);
         }
         return ans;
     }
+
     private boolean isFormP(String form) {
-        while(canRemoveB(form)) {
+        while (canRemoveB(form)) {
             form = removeB(form);   //כל עוד אפשר להיפטר מהסוגריים החיצוניים - ניפטר מהם.
         }
-        if(isFunc(form)) return true;
-        else {
+        if (isIf(form)) return true;
+        if (isFunc(form)) return true;
         Index2D c = new CellEntry(form);
-        if(isIn(c.getX(), c.getY())) return true; //אם הצורה מתאימה להיות תא ולידי
-            else{
-                if(isNumber(form)) return true;  // אם זה מספר רגיל
-                else {
-                    int ind = findLastOp(form);// bug (what?)
-                    if(ind==0) {  // the case of -1, or -(1+1)
-                        char c1 = form.charAt(0);
-                        if(c1=='-' | c1=='+') {
-                            return isFormP(form.substring(1)); //אם האופרטור בהתחלה- לבדוק החל מהתו שאחריו
-                        } else return false;
-                    }
-                    else { //אם האופרטור מחלק את הביטוי לשניים ובודק את התקינות של שני החלקים
-                        String f1 = form.substring(0, ind);
-                        String f2 = form.substring(ind + 1);
-                        return isFormP(f1) && isFormP(f2);
-                    }
+        if (isIn(c.getX(), c.getY())) return true; //אם הצורה מתאימה להיות תא ולידי
+        else {
+            if (isNumber(form)) return true;  // אם זה מספר רגיל
+            else {
+                int ind = findLastOp(form);// bug (what?)
+                if (ind == 0) {  // the case of -1, or -(1+1)
+                    char c1 = form.charAt(0);
+                    if (c1 == '-' | c1 == '+') {
+                        return isFormP(form.substring(1)); //אם האופרטור בהתחלה- לבדוק החל מהתו שאחריו
+                    } else return false;
+                } else { //אם האופרטור מחלק את הביטוי לשניים ובודק את התקינות של שני החלקים
+                    String f1 = form.substring(0, ind);
+                    String f2 = form.substring(ind + 1);
+                    return isFormP(f1) && isFormP(f2);
                 }
             }
         }
     }
 
-    private boolean isFunc (String form){
-        boolean ans = false;
-        if (form.startsWith("MIN")||form.startsWith("MAX")||form.startsWith("SUM")||form.startsWith("AVG")){
+    private boolean isFunc (String form) {
+        if (form.startsWith("MIN") || form.startsWith("MAX") || form.startsWith("SUM") || form.startsWith("AVG")) {
             form = form.substring(3);  //    "SUM(A1:B13)" ---> "(A1:B13)"
-            if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
-            String[] splitRange =form.split(":");
-            if(splitRange.length!=2) return false;  // must have at lest two chars per index A2 I e.g.
+            if (form.startsWith("(") && form.startsWith(")"))
+                form = form.substring(1, form.length() - 1); // ---> A1:B73
+            String[] splitRange = form.split(":");
+            if (splitRange.length != 2) return false;  // must have at lest two chars per index A2 I e.g.
             else {
                 Index2D c1 = new CellEntry(splitRange[0]);
                 Index2D c2 = new CellEntry(splitRange[1]);
                 // try to put those parts as valid cells- to see if they're valid
-                if (c1.isValid() && c2.isValid() && isIn(c1.getX(), c1.getY()) && isIn(c2.getX(), c2.getY()))
-                    return true;
+                return  (c1.isValid() && c2.isValid() && isIn(c1.getX(), c1.getY()) && isIn(c2.getX(), c2.getY()));
             }
         }
+        return false;
+    }
         // the correct form of if is- "=if(<condition>,<if-true>,<if-false>)”
-        //e.g. " =if(a1 < 2 , sum(a1:d4) , 0)
-        else if (form.startsWith("IF")){ // IF
+        // e.g. " =if(a1 < 2 , sum(a1:d4) , 0)
+    private boolean isIf (String form) {
+    if (form.startsWith("IF")){ // IF
             form = form.substring(2);
             if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
             String[] splitIf =form.split(",");
             if(splitIf.length!=3) return false;  // must have at lest two chars per index A2 I e.g.
             else return (isCondition(splitIf[0])); //check if IF arguments are valid forms/functions
             }
-        return ans;
+        return false;
     }
 
     private boolean isCondition (String condition){
@@ -393,17 +395,45 @@ public class Ex2Sheet implements Sheet {
                 if(sc2.isValid()) {ans.add(sc2); i+=2;}
                 else {i=i+1;}
             }
-
         }
         return ans;
     }
-
+    //if(num op cell , cell, func)
     private Double computeFormP(String form) {
         Double ans = null;
         while(canRemoveB(form)) {
             form = removeB(form);
         }
-        CellEntry c = new CellEntry(form);
+        if (isFunc(form)) {
+            Range2D range = getRange(form);
+            if (form.startsWith("SUM") || form.startsWith("AVG")) {
+                for (Index2D index : range.getCells()) {
+                    if (data[index.getX()][index.getY()] == null) return null;
+                    ans += data[index.getX()][index.getY()];
+                }
+                return form.startsWith("SUM") ? ans : ans / range.getCells().size(); //if <condition>?, <true> : <false>
+            }
+            if (form.startsWith("MIN")) {
+                ans = Double.MAX_VALUE;
+                for (Index2D index : range.getCells()) {
+                    if (data[index.getX()][index.getY()] == null) return null;
+                    if (data[index.getX()][index.getY()] < ans) {
+                        ans = data[index.getX()][index.getY()];
+                    }
+                }
+            }
+            if (form.startsWith("MIN")) {
+                ans = Double.MIN_VALUE;
+                for (Index2D index : range.getCells()) {
+                    if (data[index.getX()][index.getY()] == null) return null;
+                    if (data[index.getX()][index.getY()] < ans) {
+                        ans = data[index.getX()][index.getY()];
+                    }
+                }
+            }
+            return ans;
+        }
+        CellEntry c = new CellEntry(form); // if it is a cell - return its value
         if(c.isValid()) {
 
             return getDouble(eval(c.getX(), c.getY()));
@@ -443,6 +473,16 @@ public class Ex2Sheet implements Sheet {
             }
         }
         return ans;
+    }
+
+    //a method which gets a func and returns the start and end indexes
+    private Range2D getRange (String range){
+        Index2D[] indexes = new Index2D[2];
+        range = range.substring(4,range.length()-1);
+        String[] strIndexes = range.split(":");
+        indexes[0] = new CellEntry(strIndexes[0]);
+        indexes[1] = new CellEntry(strIndexes[1]);
+        return new Range2D(indexes[0], indexes[1]);
     }
     private static int opCode(String op){
         int ans =-1;
