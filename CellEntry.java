@@ -5,16 +5,21 @@ package assignments.ex2.ex2_sol;
 public class CellEntry  implements Index2D {
     private String _data;
     private int x, y;
+
     public CellEntry(int x, int y) {
-        if(x<0 | y<0 | x>= Ex2Utils.ABC.length) {_data = "ERROR!";}
+        if(x<0 | y<0 | x>= Ex2Utils.ABC.length) {
+            _data = null;
+            this.x = -1;
+            this.y = -1;
+        }
         else {_data = Ex2Utils.ABC[x]+y;}
-        init();
     }
     public String toString( ) {return _data;}
     public CellEntry(String c) {
         _data = c;
         init();
     }
+
     private void init() {
         x = -1; y= -1;
        if(_data!=null && _data.length()>=2) {

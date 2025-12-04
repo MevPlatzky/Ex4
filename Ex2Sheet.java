@@ -323,8 +323,7 @@ public class Ex2Sheet implements Sheet {
     }
     private boolean isFunc (String form){
         boolean ans = false;
-        form = removeSpaces(form); //"sum (a1 : b7)" ---> "sum(a1:b13)"
-        form = form.toUpperCase(); //                ---> "SUM(A1:B13)"
+        form = form.toUpperCase(); // "sum(a1:b13)"     ---> "SUM(A1:B13)"
         if (form.startsWith("MIN")||form.startsWith("MAX")||form.startsWith("SUM")||form.startsWith("AVG")){
             form = form.substring(3);  //     ---> "(A1:B13)"
             if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
