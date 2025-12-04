@@ -19,5 +19,8 @@ public class Ex2Utils {
 
     // ****** not implemented in Ex2!! ******
      public static final String[] FUNCTIONS = {"if", "sum", "avg", "min", "max"};
-     public static String[] B_OPS = {"<", ">", "==","!=", "<=", ">="};
+     public static String[] B_OPS = {"==","!=", "<=", ">=", "<", ">"};
 }
+/**                                  condotion = "a1 <= 4"
+ *
+ */

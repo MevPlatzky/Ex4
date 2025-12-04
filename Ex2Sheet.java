@@ -291,36 +291,34 @@ public class Ex2Sheet implements Sheet {
         return ans;
     }
     private boolean isFormP(String form) {
-        boolean ans = false;
+
         while(canRemoveB(form)) {
             form = removeB(form);   //כל עוד אפשר להיפטר מהסוגריים החיצוניים - ניפטר מהם.
         }
-        //if(isFunc(form)) ans = true;
-        // else {
+        if(isFunc(form)) return true;
+        else {
         Index2D c = new CellEntry(form);
-        if(isIn(c.getX(), c.getY())) {ans = true;} //אם הצורה מתאימה להיות תא ולידי
-        else{
-            if(isNumber(form)) {ans = true;}  // אם זה מספר רגיל
-            else {
-                int ind = findLastOp(form);// bug (what?)
-                if(ind==0) {  // the case of -1, or -(1+1)
-                    char c1 = form.charAt(0);
-                    if(c1=='-' | c1=='+') {
-                        ans = isFormP(form.substring(1));} //אם האופרטור בהתחלה- לבדוק החל מהתו שאחריו
-                    else {ans = false;}
-                }
-                else { //אם האופרטור מחלק את הביטוי לשניים ובודק את התקינות של שני החלקים
-                    String f1 = form.substring(0, ind);
-                    String f2 = form.substring(ind + 1);
-                    ans = isFormP(f1) && isFormP(f2);
+        if(isIn(c.getX(), c.getY())) return true; //אם הצורה מתאימה להיות תא ולידי
+            else{
+                if(isNumber(form)) return true;  // אם זה מספר רגיל
+                else {
+                    int ind = findLastOp(form);// bug (what?)
+                    if(ind==0) {  // the case of -1, or -(1+1)
+                        char c1 = form.charAt(0);
+                        if(c1=='-' | c1=='+') {
+                            return isFormP(form.substring(1)); //אם האופרטור בהתחלה- לבדוק החל מהתו שאחריו
+                        } else return false;
+                    }
+                    else { //אם האופרטור מחלק את הביטוי לשניים ובודק את התקינות של שני החלקים
+                        String f1 = form.substring(0, ind);
+                        String f2 = form.substring(ind + 1);
+                        return isFormP(f1) && isFormP(f2);
+                    }
                 }
             }
         }
-        // }
-
-        // sum(a1:e3)
-        return ans;
     }
+
     private boolean isFunc (String form){
         boolean ans = false;
         form = form.toUpperCase(); // "sum(a1:b13)"     ---> "SUM(A1:B13)"
@@ -337,16 +335,30 @@ public class Ex2Sheet implements Sheet {
                     return true;
             }
         }
+        // the correct form of if is- "=if(<condition>,<if-true>,<if-false>)”
+        //e.g. " =if(a1 < 2 , sum(a1:d4) , 0)
         else if (form.startsWith("IF")){ // IF
             form = form.substring(2);
             if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
             String[] splitIf =form.split(",");
             if(splitIf.length!=3) return false;  // must have at lest two chars per index A2 I e.g.
-            else return (isFunc(splitIf[0]) && isFunc(splitIf[1]) && isFunc(splitIf[2])); //check if IF arguments are valid forms/functions
+            else return (isCondition(splitIf[0])); //check if IF arguments are valid forms/functions
             }
         return ans;
     }
 
+    private boolean isCondition (String condition){
+        for (String op : Ex2Utils.B_OPS){
+            if (condition.contains(op)){
+                String[] args = condition.split(op);
+                if (args.length != 2) return false;
+                boolean a1 = isForm(args[0]) && isForm(args[1]);
+                boolean a2 = !isForm(args[0]) && ((op.equals("==")) || (op.equals("!="))); //if it is not a form we will compare the Strings.
+                return (a1 || (a2));
+            }
+        }
+       return false;
+    }
 
     public static ArrayList<Index2D> allCells(String line) {
         ArrayList<Index2D> ans = new ArrayList<Index2D>();
