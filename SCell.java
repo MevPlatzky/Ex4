@@ -23,12 +23,20 @@ public class SCell implements Cell {
     @Override
 public void setData(String s) {
     if(s!=null) {
+        String temp = s.toUpperCase();
         type = Ex2Utils.TEXT;
-        if (isNumber(s)) {
+        if (isNumber(temp)) {
             type = Ex2Utils.NUMBER;
         }
         if(s.startsWith("=")) {
-            type = Ex2Utils.FORM;
+            if (temp.startsWith("=IF")) {
+                type = Ex2Utils.IF;
+            }
+            else if (temp.startsWith("=MIN") || temp.startsWith("=MAX") || temp.startsWith("=SUM") || temp.startsWith("=AVG"))
+            {
+                type = Ex2Utils.FUNC;
+            }
+            else type = Ex2Utils.FORM;
         }
         _line = s;
     }

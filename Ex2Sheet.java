@@ -312,7 +312,7 @@ public class Ex2Sheet implements Sheet {
         return ans;
     }
 
-    private boolean isFormP(String form) {
+    private boolean isFormP(String form) {  //includes IF, FUNC, FORM, NUM
         while (canRemoveB(form)) {
             form = removeB(form);   //כל עוד אפשר להיפטר מהסוגריים החיצוניים - ניפטר מהם.
         }
@@ -375,7 +375,7 @@ public class Ex2Sheet implements Sheet {
                 String[] args = condition.split(op);
                 if (args.length != 2) return false;
                 boolean a1 = isForm(args[0]) && isForm(args[1]);
-                boolean a2 = !isForm(args[0]) && ((op.equals("==")) || (op.equals("!="))); //if it is not a form we will compare the Strings.
+                boolean a2 = (!isForm(args[0]) || !isForm(args[1])) && ((op.equals("==")) || (op.equals("!="))); //if one of the arguments is not a form we will compare the Strings.
                 return (a1 || (a2));
             }
         }
@@ -401,9 +401,10 @@ public class Ex2Sheet implements Sheet {
         }
         return ans;
     }
-    //=if(num op cell , cell, func)
+
     private Double computeFormP(String form) {
         Double ans = null;
+        if (form != null) form = form.toUpperCase();
         while(canRemoveB(form)) {
             form = removeB(form);
         }
@@ -412,34 +413,52 @@ public class Ex2Sheet implements Sheet {
             if (form.startsWith("SUM") || form.startsWith("AVG")) {
                 ans = 0.0;
                 for (Index2D index : range.getCells()) {
-                    if (data[index.getX()][index.getY()] == null) return null;
-                    ans += data[index.getX()][index.getY()];
+                    CellEntry c = new CellEntry(index.getX(),index.getY()); // if it is a cell - return its value
+                    Double cellVal = getDouble(eval(c.getX(),c.getY()));
+                    if(c.isValid()) {
+                        ans += cellVal;
+                    }
+                    else return null;
                 }
                 return form.startsWith("SUM") ? ans : ans / range.getCells().size(); //if <condition>?, <true> : <false>
             }
             if (form.startsWith("MIN")) {
                 ans = Double.MAX_VALUE;
                 for (Index2D index : range.getCells()) {
-                    if (data[index.getX()][index.getY()] == null) return null;
-                    if (data[index.getX()][index.getY()] < ans) {
-                        ans = data[index.getX()][index.getY()];
+                    CellEntry c = new CellEntry(index.getX(),index.getY()); // if it is a cell - return its value
+                    Double cellVal = getDouble(eval(c.getX(),c.getY()));
+                    if(c.isValid()) {
+                        if (cellVal < ans) {
+                            ans = cellVal;
+                        }
                     }
+                    else return null;
                 }
             }
             if (form.startsWith("MAX")) {
                 ans = Double.MIN_VALUE;
                 for (Index2D index : range.getCells()) {
-                    if (data[index.getX()][index.getY()] == null) return null;
-                    if (data[index.getX()][index.getY()] > ans) {
-                        ans = data[index.getX()][index.getY()];
+                    CellEntry c = new CellEntry(index.getX(),index.getY()); // if it is a cell - return its value
+                    Double cellVal = getDouble(eval(c.getX(),c.getY()));
+                    if(c.isValid()) {
+                        if (cellVal > ans) {
+                            ans = cellVal;
+                        }
                     }
+                    else return null;
                 }
             }
             return ans;
         }
+        //=if(num op cell , cell, func)
+        if (isIf(form)) {
+            String[] splitIf = form.split(",");
+            Boolean flag = checkCondition(splitIf[0]);
+            if (flag == null) return null;
+
+        }
         CellEntry c = new CellEntry(form); // if it is a cell - return its value
         if(c.isValid()) {
-
             return getDouble(eval(c.getX(), c.getY()));
         }
         else{
@@ -477,6 +496,41 @@ public class Ex2Sheet implements Sheet {
             }
         }
         return ans;
+    }
+
+    private Boolean checkCondition(String condition){   // check if the condition is true of false (or null)
+        String op ="";
+        String[] args = new String[2];
+        for (String tempOp : Ex2Utils.B_OPS) {
+            if (condition.contains(tempOp)) {
+                args = condition.split(tempOp);
+                op = tempOp;
+                break;
+            }
+        }
+        if (isForm(args[0]) && isForm(args[1])) {
+            Double a0 = computeFormP(args[0]), a1 = computeFormP(args[1]);
+            if (a0 == null || a1 == null) return null;
+            switch (op){
+                case "==" :
+                    return a0.equals(a1);
+                case "!=" :
+                    return !a0.equals(a1);
+                case "<=" :
+                    return a0 <= a1;
+                case ">=" :
+                    return a0 >= a1;
+                case "<" :
+                    return a0 < a1;
+                case ">" :
+                    return a0 > a1;
+            }
+        }
+        if (!isForm(args[0]) || !isForm(args[1]) && (op.equals("==") || (op.equals("!=")))) {
+            return args[0].equals(args[1]);
+        }
+        System.out.println();
+        return null;
     }
 
     //a method which gets a func and returns the start and end indexes
