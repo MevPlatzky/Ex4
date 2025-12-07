@@ -217,7 +217,7 @@ public class Ex2Sheet implements Sheet {
             return line;
         }
         int type = c.getType();
-        if(type== Ex2Utils.NUMBER) { //same as text - leave as is
+        if(type == Ex2Utils.NUMBER) { //same as text - leave as is
             data[x][y] = getDouble(c.toString());
             return line;
         }
@@ -304,6 +304,7 @@ public class Ex2Sheet implements Sheet {
     private Double computeForm(int x, int y) {
         Double ans = null;
         String form = table[x][y].getData();
+        if (form != null) form = form.toUpperCase();
         form = form.substring(1);
         if(isForm(form)) {
             ans = computeFormP(form);
@@ -338,9 +339,10 @@ public class Ex2Sheet implements Sheet {
     }
 
     private boolean isFunc (String form) {
+        if (form != null) form = form.toUpperCase();
         if (form.startsWith("MIN") || form.startsWith("MAX") || form.startsWith("SUM") || form.startsWith("AVG")) {
             form = form.substring(3);  //    "SUM(A1:B13)" ---> "(A1:B13)"
-            if (form.startsWith("(") && form.startsWith(")"))
+            if (form.startsWith("(") && form.endsWith(")"))
                 form = form.substring(1, form.length() - 1); // ---> A1:B73
             String[] splitRange = form.split(":");
             if (splitRange.length != 2) return false;  // must have at lest two chars per index A2 I e.g.
@@ -356,7 +358,8 @@ public class Ex2Sheet implements Sheet {
         // the correct form of if is- "=if(<condition>,<if-true>,<if-false>)”
         // e.g. " =if(a1 < 2 , sum(a1:d4) , 0)
     private boolean isIf (String form) {
-    if (form.startsWith("IF")){ // IF
+        if (form != null) form.toUpperCase();
+        if (form.startsWith("IF")){ // IF
             form = form.substring(2);
             if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
             String[] splitIf =form.split(",");
@@ -398,7 +401,7 @@ public class Ex2Sheet implements Sheet {
         }
         return ans;
     }
-    //if(num op cell , cell, func)
+    //=if(num op cell , cell, func)
     private Double computeFormP(String form) {
         Double ans = null;
         while(canRemoveB(form)) {
@@ -407,6 +410,7 @@ public class Ex2Sheet implements Sheet {
         if (isFunc(form)) {
             Range2D range = getRange(form);
             if (form.startsWith("SUM") || form.startsWith("AVG")) {
+                ans = 0.0;
                 for (Index2D index : range.getCells()) {
                     if (data[index.getX()][index.getY()] == null) return null;
                     ans += data[index.getX()][index.getY()];
@@ -422,11 +426,11 @@ public class Ex2Sheet implements Sheet {
                     }
                 }
             }
-            if (form.startsWith("MIN")) {
+            if (form.startsWith("MAX")) {
                 ans = Double.MIN_VALUE;
                 for (Index2D index : range.getCells()) {
                     if (data[index.getX()][index.getY()] == null) return null;
-                    if (data[index.getX()][index.getY()] < ans) {
+                    if (data[index.getX()][index.getY()] > ans) {
                         ans = data[index.getX()][index.getY()];
                     }
                 }

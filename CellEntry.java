@@ -12,7 +12,10 @@ public class CellEntry  implements Index2D {
             this.x = -1;
             this.y = -1;
         }
-        else {_data = Ex2Utils.ABC[x]+y;}
+        else {_data = Ex2Utils.ABC[x]+y;
+        this.x = (x);
+        this.y = (y);
+        }
     }
     public String toString( ) {return _data;}
     public CellEntry(String c) {
