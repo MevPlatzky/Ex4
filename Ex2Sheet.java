@@ -361,7 +361,9 @@ public class Ex2Sheet implements Sheet {
         if (form != null) form.toUpperCase();
         if (form.startsWith("IF")){ // IF
             form = form.substring(2);
-            if (form.startsWith("(")&&form.startsWith(")")) form = form.substring(1,form.length()-1); // ---> A1:B73
+            if (form.startsWith("(")&&form.endsWith(")")) {
+                form = form.substring(1,form.length()-1); // ---> A1:B73
+            }
             String[] splitIf =form.split(",");
             if(splitIf.length!=3) return false;  // must have at lest two chars per index A2 I e.g.
             else return (isCondition(splitIf[0])); //check if IF arguments are valid forms/functions
@@ -415,7 +417,7 @@ public class Ex2Sheet implements Sheet {
                 for (Index2D index : range.getCells()) {
                     CellEntry c = new CellEntry(index.getX(),index.getY()); // if it is a cell - return its value
                     Double cellVal = getDouble(eval(c.getX(),c.getY()));
-                    if(c.isValid()) {
+                    if(c != null) {
                         ans += cellVal;
                     }
                     else return null;
@@ -425,37 +427,37 @@ public class Ex2Sheet implements Sheet {
             if (form.startsWith("MIN")) {
                 ans = Double.MAX_VALUE;
                 for (Index2D index : range.getCells()) {
-                    CellEntry c = new CellEntry(index.getX(),index.getY()); // if it is a cell - return its value
-                    Double cellVal = getDouble(eval(c.getX(),c.getY()));
-                    if(c.isValid()) {
-                        if (cellVal < ans) {
-                            ans = cellVal;
-                        }
-                    }
-                    else return null;
+                    CellEntry c = new CellEntry(index.getX(), index.getY()); // if it is a cell - return its value
+                    Double cellVal = getDouble(eval(c.getX(), c.getY()));
+                    if (cellVal == null) return null;
+                    if (cellVal < ans) {
+                        ans = cellVal;
+                    } else return null;
                 }
             }
             if (form.startsWith("MAX")) {
-                ans = Double.MIN_VALUE;
+                ans = -Double.MAX_VALUE;
                 for (Index2D index : range.getCells()) {
-                    CellEntry c = new CellEntry(index.getX(),index.getY()); // if it is a cell - return its value
-                    Double cellVal = getDouble(eval(c.getX(),c.getY()));
-                    if(c.isValid()) {
-                        if (cellVal > ans) {
-                            ans = cellVal;
-                        }
-                    }
-                    else return null;
+                    CellEntry c = new CellEntry(index.getX(), index.getY()); // if it is a cell - return its value
+                    Double cellVal = getDouble(eval(c.getX(), c.getY()));
+                    if (cellVal == null) return null;
+                    if (cellVal > ans) {
+                        ans = cellVal;
+                    } else return null;
                 }
             }
             return ans;
         }
         //=if(num op cell , cell, func)
         if (isIf(form)) {
+            form = form.substring(3,form.length()-1);
             String[] splitIf = form.split(",");
             Boolean flag = checkCondition(splitIf[0]);
             if (flag == null) return null;
-
+            if (flag) {
+                return computeFormP(splitIf[1]);
+            }
+            else return computeFormP(splitIf[2]);
         }
         CellEntry c = new CellEntry(form); // if it is a cell - return its value
         if(c.isValid()) {
