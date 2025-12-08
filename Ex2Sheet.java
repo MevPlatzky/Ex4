@@ -273,7 +273,6 @@ public class Ex2Sheet implements Sheet {
         }
         return ans;
     }
-    /** need to add the FUNC types...................................... **/
     public int checkType(String line) {
         line = removeSpaces(line);
         int ans = Ex2Utils.TEXT;
@@ -285,7 +284,6 @@ public class Ex2Sheet implements Sheet {
                 int type = -1;
                 String s = line.substring(1);
                 if(isForm(s)) {ans = Ex2Utils.FORM;}
-                                                          /** Overhere!!! ---> else if...  **/
             }
         }
         return ans;
@@ -358,7 +356,7 @@ public class Ex2Sheet implements Sheet {
         // the correct form of if is- "=if(<condition>,<if-true>,<if-false>)”
         // e.g. " =if(a1 < 2 , sum(a1:d4) , 0)
     private boolean isIf (String form) {
-        if (form != null) form.toUpperCase();
+        if (form != null) form = form.toUpperCase();
         if (form.startsWith("IF")){ // IF
             form = form.substring(2);
             if (form.startsWith("(")&&form.endsWith(")")) {
@@ -417,7 +415,7 @@ public class Ex2Sheet implements Sheet {
                 for (Index2D index : range.getCells()) {
                     CellEntry c = new CellEntry(index.getX(),index.getY()); // if it is a cell - return its value
                     Double cellVal = getDouble(eval(c.getX(),c.getY()));
-                    if(c != null) {
+                    if(cellVal != null) {
                         ans += cellVal;
                     }
                     else return null;
@@ -432,7 +430,7 @@ public class Ex2Sheet implements Sheet {
                     if (cellVal == null) return null;
                     if (cellVal < ans) {
                         ans = cellVal;
-                    } else return null;
+                    }
                 }
             }
             if (form.startsWith("MAX")) {
@@ -443,7 +441,7 @@ public class Ex2Sheet implements Sheet {
                     if (cellVal == null) return null;
                     if (cellVal > ans) {
                         ans = cellVal;
-                    } else return null;
+                    }
                 }
             }
             return ans;
