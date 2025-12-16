@@ -198,6 +198,23 @@ class Ex2SheetTest {
     }
 
     @Test
+    void testHugeNumbersSum() {
+        // This test is problematic with the GUI but logics works well.
+        // Huge numbers in scientific form
+        sheet.set(0, 0, "1.0E47"); // A0
+        sheet.set(1, 0, "1.0E19"); // B0
+        sheet.set(2, 0, "1.0E34"); // C0
+        sheet.set(3, 0, "1.0E70"); // D0
+        sheet.set(4, 0, "1.0E85"); // E0
+
+        assertEquals(1.0E47, Double.parseDouble(sheet.value(0, 0)), 0.001);
+        sheet.set(0, 1, "=SUM(A0:E0)"); // A1
+        double result = Double.parseDouble(sheet.value(0, 1));
+        assertTrue(result > 1.0E80, "The sum should be huge!");
+        assertEquals(1.0E85, result, 1.0E80); // בדיקה גסה
+    }
+
+    @Test
     void testFunctionsWithErrors() {
         // Cell with text
         sheet.set(0, 0, "5");
