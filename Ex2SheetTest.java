@@ -334,5 +334,7 @@ class Ex2SheetTest {
         assertEquals("246.0", s2.value(0, 1));
         assertEquals("Some Text", s2.value(0, 2));
         assertEquals("123.0", s2.value(5, 5)); // Min(123, 246) = 123
+
+        new java.io.File(filename).delete(); //delete the temporary file
     }
 }
