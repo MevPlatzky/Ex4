@@ -50,6 +50,9 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public Cell get(int x, int y) {
+        if (!isIn(x, y)) {
+            return null;
+        }
         return table[x][y];
     }
 
@@ -74,6 +77,7 @@ public class Ex2Sheet implements Sheet {
 
     @Override
     public void set(int x, int y, String s) {
+        if (!isIn(x, y)) return; //do not do anything if it is not in boundaries.
         Cell c = new SCell(s);
         table[x][y] = c;
         eval(); //after you change a cell you need to update the whole thing
@@ -106,16 +110,20 @@ public class Ex2Sheet implements Sheet {
                     }
                     else {data[x][y] = d;}
                 }
-                if (dd[x][y] == -1 ) {c.setType(Ex2Utils.ERR_CYCLE_FORM);}
+                if (dd[x][y] == -1) {
+                    if (hasInvalidReference(c)) {
+                        c.setType(Ex2Utils.ERR_FORM_FORMAT); // Cel does not exists
+                    } else {
+                        c.setType(Ex2Utils.ERR_CYCLE_FORM);  // An actual cycle ERR
+                    }
+                }
             }
         }
     }
 
     @Override
     public boolean isIn(int xx, int yy) {
-        boolean ans = true;
-        if(xx<0 |yy<0 | xx>=width() | yy>=height()) {ans = false;}
-        return ans;
+        return !(xx < 0 | yy < 0 | xx >= width() | yy >= height());
     }
 
     @Override
@@ -138,7 +146,13 @@ public class Ex2Sheet implements Sheet {
                 for (int y = 0; y < height(); y = y + 1) {
                     if(ans[x][y]==-1) {
                         Cell c = this.get(x, y);
-                     //   ArrayList<Coord> deps = allCells(c.toString());
+                        if (c.getType() == Ex2Utils.NUMBER) { // Make sure we do not take super large numbers as E308... as forms.
+                            ans[x][y] = 0;
+                            count++;
+                            changed = true;
+                            continue;
+                        }
+                     //   ArrayList<Coord> deps = allCells(c.toString()); ???
                         ArrayList<Index2D> deps = allCells(c.getData());
                         int dd = canBeComputed(deps, ans);
                         if (dd!=-1) {
@@ -201,6 +215,9 @@ public class Ex2Sheet implements Sheet {
         int ans = 0;
         for(int i=0;i<deps.size()&ans!=-1;i=i+1) {
             Index2D c = deps.get(i);
+            if (!isIn(c.getX(), c.getY())) {
+                return -1; // או טיפול אחר, אבל בטח לא לגשת למערך!
+            }
             int v = tmpTable[c.getX()][c.getY()];
             if(v==-1) {ans=-1;} // not yet computed;
             else {ans = Math.max(ans,v+1);}
@@ -288,6 +305,7 @@ public class Ex2Sheet implements Sheet {
         }
         return ans;
     }
+
     public boolean isForm(String form) {
         boolean ans = false;
         if(form!=null) {
@@ -302,7 +320,7 @@ public class Ex2Sheet implements Sheet {
     private Double computeForm(int x, int y) {
         Double ans = null;
         String form = table[x][y].getData();
-        if (form != null) form = form.toUpperCase();
+        if (form != null) form = removeSpaces(form.toUpperCase());
         form = form.substring(1);
         if(isForm(form)) {
             ans = computeFormP(form);
@@ -383,7 +401,7 @@ public class Ex2Sheet implements Sheet {
     }
 
     public static ArrayList<Index2D> allCells(String line) {
-        ArrayList<Index2D> ans = new ArrayList<Index2D>();
+        ArrayList<Index2D> ans = new ArrayList<>();
         int i=0;
         int len = line.length();
         while(i<len) {
@@ -446,16 +464,20 @@ public class Ex2Sheet implements Sheet {
             }
             return ans;
         }
-        //=if(num op cell , cell, func)
+        //E.G. =if(num op cell , cell, func)
         if (isIf(form)) {
             form = form.substring(3,form.length()-1);
             String[] splitIf = form.split(",");
             Boolean flag = checkCondition(splitIf[0]);
             if (flag == null) return null;
             if (flag) {
-                return computeFormP(splitIf[1]);
+                if (!splitIf[1].contains("=")) {
+                    return computeFormP(splitIf[1]);
+                } else return null;
             }
-            else return computeFormP(splitIf[2]);
+            else if (!splitIf[2].contains("=")) {
+                return computeFormP(splitIf[2]);
+            } else return null;
         }
         CellEntry c = new CellEntry(form); // if it is a cell - return its value
         if(c.isValid()) {
@@ -463,6 +485,7 @@ public class Ex2Sheet implements Sheet {
         }
         else{
             if(isNumber(form)){ans = getDouble(form);}
+            // The last option remaining is a formula:
             else {
                 int ind = findLastOp(form);
                 int opInd = opCode(form.substring(ind,ind+1));
@@ -533,7 +556,7 @@ public class Ex2Sheet implements Sheet {
         return null;
     }
 
-    //a method which gets a func and returns the start and end indexes
+    //a method that gets a func and returns the start and end indexes
     private Range2D getRange (String range){
         Index2D[] indexes = new Index2D[2];
         range = range.substring(4,range.length()-1);
@@ -628,5 +651,16 @@ public class Ex2Sheet implements Sheet {
         }
         catch (Exception e) {;}
         return ans;
+    }
+
+    private boolean hasInvalidReference(Cell c) {
+        if (c == null) return false;
+        ArrayList<Index2D> cells = allCells(c.getData());
+        for (Index2D d : cells) {
+            if (!isIn(d.getX(), d.getY())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
