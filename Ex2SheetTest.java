@@ -6,8 +6,8 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Comprehensive Test Class for Ex2Sheet.
- * Based on extensive coverage requirements including:
+ * Test Class for Ex2Sheet.
+ * including:
  * - Advanced Arithmetic & Precedence
  * - Deep Dependency Chains
  * - Complex Function usage (Ranges, Errors, Edge cases)
@@ -84,6 +84,21 @@ class Ex2SheetTest {
         assertEquals("NewText", sheet.value(1, 1));
     }
 
+    @Test
+    void testTextFormulas() {
+        // Looks like a cell but is actually text
+        sheet.set(0, 0, "A1");
+        assertEquals("A1", sheet.value(0, 0));
+
+        // Special characters
+        sheet.set(0, 1, "?hello@world!!! `this is~ ** wir#d ** & | l^Ke ^t H@ ()===}======>");
+        assertEquals("?hello@world!!! `this is~ ** wir#d ** & | l^Ke ^t H@ ()===}======>", sheet.value(0, 1));
+
+        // Add text to number
+        sheet.set(0, 2, "=A0+5");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 2));
+    }
+
     // ADVANCED ARITHMETICS for simple formulas:
     @Test
     void testComplexArithmetic() {
@@ -105,11 +120,11 @@ class Ex2SheetTest {
         assertEquals("16.0", sheet.value(2, 0));
         sheet.set(2, 1, "=5/2"); // 2.5
         assertEquals("2.5", sheet.value(2, 1));
-        // Starts with minus
+        // Starts with minus and plus
         sheet.set(2, 0, "=-(1+4)");
         assertEquals("-5.0", sheet.value(2, 0));
-        sheet.set(2, 1, "=-1+5");
-        assertEquals("4.0", sheet.value(2, 1));
+        sheet.set(2, 1, "=+1+5");
+        assertEquals("6.0", sheet.value(2, 1));
         sheet.set(2, 0, "=-2*4");
         assertEquals("-8.0", sheet.value(2, 0));
         //With  s p a c e s  test
@@ -262,6 +277,12 @@ class Ex2SheetTest {
         assertEquals("12.5", sheet.value(0,3));
         sheet.set(0,3,"=MAX(A1:B0)");
         assertEquals("25.0",sheet.value(0,3));
+
+        // With mixed Uppercase and Lowercase letters
+        sheet.set(0,3,"=AvG(A1:B0)");
+        assertEquals("12.5", sheet.value(0,3));
+        sheet.set(0,3,"=mAx(A1:B0)");
+        assertEquals("25.0",sheet.value(0,3));
     }
 
     @Test
@@ -349,10 +370,10 @@ class Ex2SheetTest {
         sheet.set(1, 0, "100");
         sheet.set(1, 1, "=IF(A0==100, B0, 0)"); //A0 is 100 from last test...
         assertEquals("100.0", sheet.value(1, 1));
-        //WITH CELL REFERENCES & MATH EXPRESSIONS
+        //WITH CELL REFERENCES & MATH EXPRESSIONS & EXCESSIVE SPACES
         sheet.set(2, 0, "100");
         sheet.set(0, 2, "100");
-        sheet.set(2, 1, "=IF(A0==(2*B0-100), B0-7, 0)"); //A0 is 100 from last test...
+        sheet.set(2, 1, "=IF(A0=   =(2*B0-1  00), B0-7,    0)"); //A0 is 100 from last test...
         assertEquals("93.0", sheet.value(2, 1));
         sheet.set(4, 1, "=if(b0*b1 != a3/(2-a1), a2+2, a1+1)");
         assertEquals("102.0", sheet.value(4, 1));
