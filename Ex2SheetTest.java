@@ -28,6 +28,7 @@ class Ex2SheetTest {
         // NegativeArraySizeException
         assertThrows(Throwable.class, () -> new Ex2Sheet(-2, 3));
         assertThrows(Throwable.class, () -> new Ex2Sheet(7, -1));
+        assertThrows(Throwable.class, () -> new Ex2Sheet(-7, -1));
         // Default sheet
         Ex2Sheet defaultSheet = new Ex2Sheet();
         assertEquals(Ex2Utils.WIDTH, defaultSheet.width());
@@ -46,6 +47,9 @@ class Ex2SheetTest {
         assertNull(sheet.get(30, 0));
         assertNull(sheet.get(0, 300));
 
+        assertTrue(sheet.isIn(0, 0));
+        assertTrue(sheet.isIn(Ex2Utils.WIDTH - 1, Ex2Utils.HEIGHT - 1));
+
         assertFalse(sheet.isIn(-1, 0));
         assertFalse(sheet.isIn(0, -1));
         assertFalse(sheet.isIn(27, 0));
@@ -55,26 +59,17 @@ class Ex2SheetTest {
     void testCellAccessAndCoordinates() {
         sheet.set(0, 0, "TopLeft");
         sheet.set(Ex2Utils.WIDTH-1, Ex2Utils.HEIGHT-1, "BottomRight");
-
-        // 1. בדיקת get לפי אינדקסים
+        // Get with index
         assertNotNull(sheet.get(0, 0));
         assertEquals("TopLeft", sheet.get(0, 0).getData());
-
-        // 2. בדיקת get לפי מחרוזת (רגישות לאותיות)
-        assertNotNull(sheet.get("A0")); // רגיל
-        assertNotNull(sheet.get("a0")); // אות קטנה
+        // Get with Strong
+        assertNotNull(sheet.get("A0")); // Uppercase
+        assertNotNull(sheet.get("a0")); // Lowercase
         assertEquals("TopLeft", sheet.get("a0").getData());
-
-        // 3. מקרים לא חוקיים של מחרוזות
-        assertNull(sheet.get("XX99")); // אותיות כפולות (בהנחה ולא נתמך)
-        assertNull(sheet.get("A-1"));  // מינוס
-        assertNull(sheet.get(""));     // ריק
-
-        // 4. בדיקת isIn
-        assertTrue(sheet.isIn(0, 0));
-        assertFalse(sheet.isIn(-1, 0));
-        assertFalse(sheet.isIn(0, -1));
-        assertFalse(sheet.isIn(26, 0)); // בדיוק בחוץ
+        // Illegal Strings inputs
+        assertNull(sheet.get("XX99"));
+        assertNull(sheet.get("A-1"));
+        assertNull(sheet.get(""));
     }
 
     @Test
@@ -145,10 +140,8 @@ class Ex2SheetTest {
             String prevCell = "A" + (i - 1);
             sheet.set(0, i, "=" + prevCell + "+2");
         }
-
         // בדיקה: התא העשירי (A9) אמור להיות: 2 + (9 * 2) = 20
         assertEquals("20.0", sheet.value(0, depth - 1));
-
         //  משנים את ההתחלה (A0)
         sheet.set(0, 0, "1");
         // עכשיו: 1 + 18 = 19
@@ -157,25 +150,17 @@ class Ex2SheetTest {
 
     @Test
     void testCrossReference() {
-        // X תלוי ב-Y, Y תלוי ב-Z
-        sheet.set(0, 0, "=10");    // A0
-
-        // תיקון: שימוש בגבולות האמיתיים של הלוח במקום Z99
-        int lastCol = Ex2Utils.WIDTH - 1;   // בדרך כלל 8 (I)
-        int lastRow = Ex2Utils.HEIGHT - 1;  // בדרך כלל 16
+        sheet.set(0, 0, "=10"); //A0
+        int lastCol = Ex2Utils.WIDTH - 1;
+        int lastRow = Ex2Utils.HEIGHT - 1;
 
         // נציב בתא האחרון בלוח (למשל I16)
         sheet.set(lastCol, lastRow, "=A0*2");
-
-        // נציב בתא באמצע (למשל E5) הפניה לתא האחרון
-        // בונים את השם של התא האחרון דינמית (למשל "I16")
+        //Dynamically build the last cell
         String lastCellName = Ex2Utils.ABC[lastCol] + lastRow;
         sheet.set(5, 5, "=" + lastCellName + "+5");
-
-        // בדיקה: 20 + 5 = 25
         assertEquals("25.0", sheet.value(5, 5));
     }
-
 
     @Test
     void testFunctions() {
@@ -195,6 +180,10 @@ class Ex2SheetTest {
         // טווח הפוך (A2:A0) - אם מימשת את ה-Min/Max ב-Range2D
         sheet.set(1, 2, "=MAX(A2:A0)");
         assertEquals("25.0", sheet.value(1, 2));
+
+        /** avg!
+         *
+         */
     }
 
     @Test
@@ -238,8 +227,7 @@ class Ex2SheetTest {
     @Test
     void testFunctionCircular() {
         // Function contains itself in range:
-        // A0 = SUM(A0:A1) -> מעגל!
-        sheet.set(0, 0, "=SUM(A0:A1)");
+        sheet.set(0, 0, "=AVG(A0:A1)");
         assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(0, 0));
     }
 
@@ -248,8 +236,7 @@ class Ex2SheetTest {
         // Test huge numbers
         sheet.set(0, 0, String.valueOf(Double.MAX_VALUE));
         sheet.set(0, 1, String.valueOf(Double.MAX_VALUE));
-
-        // זה אמור לצאת Infinity
+        // Should be infinity
         sheet.set(1, 0, "=SUM(A0:A1)");
         assertEquals("Infinity", sheet.value(1, 0));
     }
@@ -277,7 +264,7 @@ class Ex2SheetTest {
         sheet.set(0, 0, "=IF(-15 <= -4, 100, 0)");
         assertEquals("100.0", sheet.value(0, 0));
         // WITH MATH EXPRESSIONS
-        sheet.set(0, 1, "=IF(1+1==2, 5*2, 0)");
+        sheet.set(0, 1, "=IF((1+1*9-8)==2, 5*2, 0)");
         assertEquals("10.0", sheet.value(0, 1));
         //WITH CELL REFERENCES
         sheet.set(1, 0, "100");
@@ -287,49 +274,48 @@ class Ex2SheetTest {
         sheet.set(2, 0, "100");
         sheet.set(2, 1, "=IF(A0==(2*B0-100), B0-7, 0)"); //A0 is 100 from last test...
         assertEquals("93.0", sheet.value(2, 1));
-
     }
 
     @Test
-    void testErrorPropagation() {
-        // שגיאה מתפשטת: A0 שגוי -> B0 תלוי בו -> גם B0 שגוי
-        sheet.set(0, 0, "=1/0"); // Infinity (או ERR תלוי בלוגיקה)
+    void testErrorSpread() {
+        // The Error spreads to the dependant cells
+        sheet.set(0, 0, "=1/0"); // Infinity
         sheet.set(1, 0, "=A0+5");
         assertEquals("Infinity", sheet.value(1, 0)); // Infinity + 5 = Infinity
 
-        sheet.set(0, 1, "=ERR"); // שגיאת פורמט
+        sheet.set(0, 1, "=ERR"); // Form Err
         sheet.set(1, 1, "=A1+5");
-        // אם A1 הוא ERR_FORM, אז החישוב של B1 אמור להיכשל
         assertEquals(Ex2Utils.ERR_FORM, sheet.value(1, 1));
     }
 
     @Test
     void testInvalidReferences() {
-        // הפנייה לטווח לא חוקי
-        sheet.set(0, 0, "=SUM(A0:Z9999)"); // חורג מהגבולות
-        // בהתאם לתיקון שעשינו, זה צריך להיות ERR_FORM או ERR_FUNC
+        // An illegal reference cell
+        sheet.set(1, 0, "=SUM(B1:Z9999)"); // out of boundaries
+        sheet.set(0, 1, "=SUM(A1:Z9999)"); // cycle reference
+        sheet.set(0, 0, "=SUM(A:11)"); // illegal reference
         String val = sheet.value(0, 0);
         assertNotEquals("0.0", val);
-        assertTrue(val.startsWith("ERR"));
+        assertEquals(Ex2Utils.ERR_FUNC,sheet.value(1,0));
+        assertEquals(Ex2Utils.ERR_CYCLE,sheet.value(0,1));
+        assertEquals(Ex2Utils.ERR_FUNC,sheet.value(0,0));
     }
 
     // SAVE & LOAD:
     @Test
-    void testPersistence() throws IOException {
+    void testSetAndLoad() throws IOException {
         String filename = "robust_test.csv";
 
-        //fill with some stuff
+        //fill with some stuff and save
         sheet.set(0, 0, "123");
         sheet.set(0, 1, "=A0*2");
         sheet.set(0, 2, "Some Text");
         sheet.set(5, 5, "=MIN(A0:A1)");
-
         sheet.save(filename);
-
         //create a new sheet and load the saved one
         Ex2Sheet s2 = new Ex2Sheet(Ex2Utils.WIDTH, Ex2Utils.HEIGHT);
         s2.load(filename);
-
+        //Check the values
         assertEquals("123.0", s2.value(0, 0));
         assertEquals("246.0", s2.value(0, 1));
         assertEquals("Some Text", s2.value(0, 2));
