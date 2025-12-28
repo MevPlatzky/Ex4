@@ -86,9 +86,9 @@ Before evaluation, the `depth()` method runs an iterative algorithm:
 
 ---
 
-## 🧪 Testing (JUnit 5)
+## 🧪 Testing
 
-The project includes a comprehensive test suite (`Ex2SheetTest`) ensuring high reliability and robustness. The tests cover:
+The project includes a comprehensive test suite (JUnit 5) (`Ex2SheetTest`) ensuring high reliability and robustness. The tests cover:
 
 1. **Boundaries & Infrastructure:**
 * Verifies grid initialization (default 9x17).
