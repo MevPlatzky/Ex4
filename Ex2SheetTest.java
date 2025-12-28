@@ -84,7 +84,7 @@ class Ex2SheetTest {
         assertEquals("NewText", sheet.value(1, 1));
     }
 
-    // ADVANCED ARITHMETICS:
+    // ADVANCED ARITHMETICS for simple formulas:
     @Test
     void testComplexArithmetic() {
         // Braces & Nested braces
@@ -125,6 +125,34 @@ class Ex2SheetTest {
         // More complex division
         sheet.set(1, 0, "=(404+404)/8"); // 101
         assertEquals("101.0", sheet.value(1, 0));
+    }
+
+    @Test
+    void testErrForms() {  //a, AB, @2, 2+), (3+1*2)-, =(), =5**,
+        // Missing parenthesis etc
+        sheet.set(0, 0, "=3+");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        sheet.set(0, 0, "=(7)+");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        sheet.set(0, 0, "=a");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        sheet.set(0, 0, "=AB");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        sheet.set(0, 0, "=@2");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        sheet.set(0, 0, "=(3+1*2)-");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        sheet.set(0, 0, "=()");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        sheet.set(0, 0, "=5*+");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 0));
+        // Missing cell
+        sheet.set(0, 1, "=Z99");
+        assertEquals(Ex2Utils.ERR_FORM_FORMAT, sheet.get(0, 1).getType());
+        // Func does not exists
+        sheet.set(0, 2, "=HELLO(1,1)");
+        assertTrue(sheet.value(0, 2).startsWith("ERR"));
+        //
     }
 
     @Test
@@ -175,8 +203,7 @@ class Ex2SheetTest {
         sheet.set(0, 0, "=10"); //A0
         int lastCol = Ex2Utils.WIDTH - 1;
         int lastRow = Ex2Utils.HEIGHT - 1;
-
-        // נציב בתא האחרון בלוח (למשל I16)
+        // set the last cell
         sheet.set(lastCol, lastRow, "=A0*2");
         //Dynamically build the last cell
         String lastCellName = Ex2Utils.ABC[lastCol] + lastRow;
@@ -186,26 +213,44 @@ class Ex2SheetTest {
 
     @Test
     void testFunctions() {
-        // נתונים
         sheet.set(0, 0, "5");
-        sheet.set(0, 1, "15");
-        sheet.set(0, 2, "25");
+        sheet.set(1, 0, "10");
+        sheet.set(0, 1, "10");
+        sheet.set(1, 1, "25");
+        sheet.set(0, 2, "15");
 
-        // טווח מלא
-        sheet.set(1, 0, "=SUM(A0:A2)");
-        assertEquals("45.0", sheet.value(1, 0));
+        // A one dimensional range
+        sheet.set(0, 3, "=SUM(A0:A2)");
+        assertEquals("30.0", sheet.value(0, 3));
+        sheet.set(0,3,"=AVG(A0:A2)");
+        assertEquals("10.0", sheet.value(0,3));
+        sheet.set(0,3,"=MIN(A0:A2)");
+        assertEquals("5.0",sheet.value(0,3));
+        sheet.set(0,3,"=MAX(A0:A2)");
+        assertEquals("15.0",sheet.value(0,3));
 
-        // טווח של תא בודד (חשוב!)
-        sheet.set(1, 1, "=MIN(A0:A0)");
-        assertEquals("5.0", sheet.value(1, 1));
+        // A two-dimensional range
+        sheet.set(0, 3, "=SUM(A0:B1)");
+        assertEquals("50.0", sheet.value(0, 3));
+        sheet.set(0,3,"=AVG(A0:B1)");
+        assertEquals("12.5", sheet.value(0,3));
+        sheet.set(0,3,"=MIN(A0:B1)");
+        assertEquals("5.0",sheet.value(0,3));
+        sheet.set(0,3,"=MAX(A0:B1)");
+        assertEquals("25.0",sheet.value(0,3));
 
-        // טווח הפוך (A2:A0) - אם מימשת את ה-Min/Max ב-Range2D
-        sheet.set(1, 2, "=MAX(A2:A0)");
-        assertEquals("25.0", sheet.value(1, 2));
+        // A single cell range
+        sheet.set(0, 3, "=MIN(A0:A0)");
+        assertEquals("5.0", sheet.value(0, 3));
+        sheet.set(0,3,"=AVG(A2:A2)");
+        assertEquals("15.0", sheet.value(0,3));
 
-        /** avg!
-         *
-         */
+        // A reverse range order
+        sheet.set(0,3,"=AVG(A1:B0)");
+        assertEquals("12.5", sheet.value(0,3));
+        sheet.set(0,3,"=MAX(A1:B0)");
+        assertEquals("25.0",sheet.value(0,3));
+
     }
 
     @Test
