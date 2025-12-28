@@ -128,6 +128,18 @@ class Ex2SheetTest {
     }
 
     @Test
+    void testErrorSpread() {
+        // The Error spreads to the dependant cells
+        sheet.set(0, 0, "=1/0"); // Infinity
+        sheet.set(1, 0, "=A0+5");
+        assertEquals("Infinity", sheet.value(1, 0)); // Infinity + 5 = Infinity
+
+        sheet.set(0, 1, "=ERR"); // Form Err
+        sheet.set(1, 1, "=A1+5");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(1, 1));
+    }
+
+    @Test
     void testErrForms() {  //a, AB, @2, 2+), (3+1*2)-, =(), =5**,
         // Missing parenthesis etc
         sheet.set(0, 0, "=3+");
@@ -250,7 +262,6 @@ class Ex2SheetTest {
         assertEquals("12.5", sheet.value(0,3));
         sheet.set(0,3,"=MAX(A1:B0)");
         assertEquals("25.0",sheet.value(0,3));
-
     }
 
     @Test
@@ -326,33 +337,53 @@ class Ex2SheetTest {
         // WITH NEGATIVE VALUES
         sheet.set(0, 0, "=IF(-10 > 5, 1, 0)");
         assertEquals("0.0", sheet.value(0, 0));
-        sheet.set(0, 0, "=IF(1 > -5, 3, 0)");
-        assertEquals("3.0", sheet.value(0, 0));
+        sheet.set(0, 1, "=IF(1 > -5, 3, 0)");
+        assertEquals("3.0", sheet.value(0, 1));
         sheet.set(0, 0, "=IF(-15 <= -4, 100, 0)");
         assertEquals("100.0", sheet.value(0, 0));
         // WITH MATH EXPRESSIONS
-        sheet.set(0, 1, "=IF((1+1*9-8)==2, 5*2, 0)");
-        assertEquals("10.0", sheet.value(0, 1));
+        //
+        sheet.set(0, 3, "=IF((1+1*9-8)==2, 5*2, 0)");
+        assertEquals("10.0", sheet.value(0, 3));
         //WITH CELL REFERENCES
         sheet.set(1, 0, "100");
         sheet.set(1, 1, "=IF(A0==100, B0, 0)"); //A0 is 100 from last test...
         assertEquals("100.0", sheet.value(1, 1));
         //WITH CELL REFERENCES & MATH EXPRESSIONS
         sheet.set(2, 0, "100");
+        sheet.set(0, 2, "100");
         sheet.set(2, 1, "=IF(A0==(2*B0-100), B0-7, 0)"); //A0 is 100 from last test...
         assertEquals("93.0", sheet.value(2, 1));
+        sheet.set(4, 1, "=if(b0*b1 != a3/(2-a1), a2+2, a1+1)");
+        assertEquals("102.0", sheet.value(4, 1));
     }
 
     @Test
-    void testErrorSpread() {
-        // The Error spreads to the dependant cells
-        sheet.set(0, 0, "=1/0"); // Infinity
-        sheet.set(1, 0, "=A0+5");
-        assertEquals("Infinity", sheet.value(1, 0)); // Infinity + 5 = Infinity
-
-        sheet.set(0, 1, "=ERR"); // Form Err
-        sheet.set(1, 1, "=A1+5");
-        assertEquals(Ex2Utils.ERR_FORM, sheet.value(1, 1));
+    void testErrIf() {
+        sheet.set(0,0,"1");
+        sheet.set(0,1,"2");
+        sheet.set(0,2,"3");
+        // Wrong format IF
+        sheet.set(3, 3, "=if(2 < 1 , 1, 0 ");   // missing braces
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(2 == 1 , 99)");    // missing second option
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(2 && 1 , 1, 3)");   // invalid op
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(2 < 1 , =1, =0)"); // shouldn't have a "=" at the results
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(2 < 1 , 1, G1");   // missing content cell
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(A1,2,3)");          // not an op
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(11,2,3)");          // also not an op
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(a1<a2,=(A1, 12)"); // invalid first formula
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(a1<a2,(A1, 12)"); // invalid first formula
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_IF);
+        sheet.set(3, 3, "=if(d3<1 , 1, 0 )");   // A self referring if
+        assertEquals(sheet.value(3, 3), Ex2Utils.ERR_CYCLE);
     }
 
     @Test

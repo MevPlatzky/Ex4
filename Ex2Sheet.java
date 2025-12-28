@@ -488,6 +488,7 @@ public class Ex2Sheet implements Sheet {
             // The last option remaining is a formula:
             else {
                 int ind = findLastOp(form);
+                if (ind == -1) return null;
                 int opInd = opCode(form.substring(ind,ind+1));
                 if(ind==0) {  // the case of -1, or -(1+1)
                     double d = 1;
