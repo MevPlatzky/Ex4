@@ -89,14 +89,22 @@ class Ex2SheetTest {
         // Looks like a cell but is actually text
         sheet.set(0, 0, "A1");
         assertEquals("A1", sheet.value(0, 0));
-
         // Special characters
         sheet.set(0, 1, "?hello@world!!! `this is~ ** wir#d ** & | l^Ke ^t H@ ()===}======>");
         assertEquals("?hello@world!!! `this is~ ** wir#d ** & | l^Ke ^t H@ ()===}======>", sheet.value(0, 1));
-
         // Add text to number
         sheet.set(0, 2, "=A0+5");
         assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 2));
+        // A number with to many points is a ctually a text
+        sheet.set(0, 3, "1.2.3");
+        assertEquals("1.2.3", sheet.value(0, 3));
+        // Same with a func without an "="
+        sheet.set(0, 4, "SUM(A0:A1)");
+        assertEquals("SUM(A0:A1)", sheet.value(0, 4));
+        // There is actually no form here
+        sheet.set(0, 5, "=");
+        assertEquals(Ex2Utils.ERR_FORM, sheet.value(0, 5));
+
     }
 
     // ADVANCED ARITHMETICS for simple formulas:
