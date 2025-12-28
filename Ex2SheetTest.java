@@ -56,7 +56,7 @@ class Ex2SheetTest {
         assertFalse(sheet.isIn(0, 101));
     }
     @Test
-    void testCellAccessAndCoordinates() {
+    void testGets() {
         sheet.set(0, 0, "TopLeft");
         sheet.set(Ex2Utils.WIDTH-1, Ex2Utils.HEIGHT-1, "BottomRight");
         // Get with index
@@ -70,6 +70,7 @@ class Ex2SheetTest {
         assertNull(sheet.get("XX99"));
         assertNull(sheet.get("A-1"));
         assertNull(sheet.get(""));
+        assertNull(sheet.get(null));
     }
 
     @Test
@@ -97,8 +98,6 @@ class Ex2SheetTest {
         assertEquals("3.0", sheet.value(0, 1));
         // Precision test
         sheet.set(1, 0, "=1.2-1.15");
-        // הערה: בגלל ייצוג Double במחשב, זה יכול לצאת 0.09999999...
-        // נבדוק שזה קרוב מספיק או נשתמש ב-Parsing הקיים
         double val = Double.parseDouble(sheet.value(1, 0));
         assertEquals(0.05, val, 0.000001);
         // Long expression test
@@ -111,23 +110,19 @@ class Ex2SheetTest {
         assertEquals("-5.0", sheet.value(2, 0));
         sheet.set(2, 1, "=-1+5");
         assertEquals("4.0", sheet.value(2, 1));
+        sheet.set(2, 0, "=-2*4");
+        assertEquals("-8.0", sheet.value(2, 0));
         //With  s p a c e s  test
         sheet.set(3, 0, "= 1 + 2 ");
         assertEquals("3.0", sheet.value(3, 0));
-        sheet.set(3, 1, "= ( 1 + 2 ) * 2");
+        sheet.set(3, 1, "=     ( 1 + 2 ) *   2");
         assertEquals("6.0", sheet.value(3, 1));
-    }
-
-    @Test
-    void testMathEdgeCases() {
-        // חלוקה באפס
+        // Zero division
         sheet.set(0, 0, "=1/0");
         assertEquals("Infinity", sheet.value(0, 0));
-
         sheet.set(0, 1, "=-1/0");
         assertEquals("-Infinity", sheet.value(0, 1));
-
-        // חישובים מורכבים יותר
+        // More complex division
         sheet.set(1, 0, "=(404+404)/8"); // 101
         assertEquals("101.0", sheet.value(1, 0));
     }
@@ -140,12 +135,39 @@ class Ex2SheetTest {
             String prevCell = "A" + (i - 1);
             sheet.set(0, i, "=" + prevCell + "+2");
         }
-        // בדיקה: התא העשירי (A9) אמור להיות: 2 + (9 * 2) = 20
+        // Check the last cell
         assertEquals("20.0", sheet.value(0, depth - 1));
-        //  משנים את ההתחלה (A0)
+        // Change the first cell
         sheet.set(0, 0, "1");
-        // עכשיו: 1 + 18 = 19
+        // now 1+2*9 = 19
         assertEquals("19.0", sheet.value(0, depth - 1));
+    }
+
+    @Test
+    void testDepthAndCycles() {
+        // A self cycle:
+        sheet.set(2, 0, "=C0");
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(2, 0));
+        // A two cell cycleL
+        sheet.set(0, 0, "=B0");
+        sheet.set(1, 0, "=A0");
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(0, 0));
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(1, 0));
+        // Check directly the depth:
+        int[][] d = sheet.depth();
+        assertEquals(-1, d[0][0]);
+        assertEquals(-1, d[1][0]);
+        // A bigger cycle:
+        sheet.set(0, 0, "=A4");
+        sheet.set(0, 1, "=A0");
+        sheet.set(0, 2, "=A1");
+        sheet.set(0, 3, "=A2");
+        sheet.set(0, 4, "=A3");
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(0, 0));
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(0, 1));
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(0, 2));
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(0, 3));
+        assertEquals(Ex2Utils.ERR_CYCLE, sheet.value(0, 4));
     }
 
     @Test
@@ -322,5 +344,16 @@ class Ex2SheetTest {
         assertEquals("123.0", s2.value(5, 5)); // Min(123, 246) = 123
 
         new java.io.File(filename).delete(); //delete the temporary file
+    }
+
+    @Test
+    void testFindLastOp() {
+        assertEquals(1, Ex2Sheet.findLastOp("1+2"));    // +
+        assertEquals(1, Ex2Sheet.findLastOp("1-2"));    // -
+        assertEquals(1, Ex2Sheet.findLastOp("1*2"));    // *
+        assertEquals(1, Ex2Sheet.findLastOp("1/2"));    // /
+        assertEquals(1, Ex2Sheet.findLastOp("1+2*3"));  // +
+        assertEquals(3, Ex2Sheet.findLastOp("1*2+3"));  // +
+        assertEquals(5, Ex2Sheet.findLastOp("(1+2)*3"));    // *
     }
 }
