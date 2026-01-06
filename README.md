@@ -1,7 +1,7 @@
-# Ex4
+# JAVA Exel Spreadsheet
 <img width="540" height="500" alt="Gemini_Generated_Image_99qeoo99qeoo99qe" src="https://github.com/user-attachments/assets/d55253e1-fe42-4579-aca4-b19cb49f0ff7" />
 
-# 📊 Ex4: Advanced Spreadsheet Engine
+# 📊 Advanced Spreadsheet Engine
 
 > **A robust, object-oriented spreadsheet application featuring formula parsing, dependency resolution, cycle detection, and advanced logical functions.**
 
